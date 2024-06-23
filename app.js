@@ -152,6 +152,39 @@ app.delete('/certificate/:id', async (req, res) => {
     }
 });
 
+// Route to filter certificates by provider
+app.get('/certificates/provider/:provider', async (req, res) => {
+    const provider = req.params.provider;
+
+    try {
+        const result = await pool.query('SELECT * FROM certificates WHERE provider = $1', [provider]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Route to filter certificates by oldest date first 
+app.get('/certificates/oldest', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM certificates ORDER BY date ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Route to filter certificates by newest date
+app.get('/certificates/newest', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM certificates ORDER BY date DESC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
