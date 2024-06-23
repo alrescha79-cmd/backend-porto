@@ -23,6 +23,11 @@ const upload = multer({ storage: storage });
 
 app.use(express.json());
 
+// Route to handle root
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'Selamat Datang Kawan...' });
+});
+
 // Route to handle file uploads and saving metadata
 app.post('/certificate', upload.single('image'), async (req, res) => {
     const { name, description, category, link } = req.body;
