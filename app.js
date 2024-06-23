@@ -30,11 +30,11 @@ app.get('/', (req, res) => {
 
 // Route to handle file uploads and saving metadata
 app.post('/certificate', upload.single('image'), async (req, res) => {
-    const { name, description, category, link } = req.body;
+    const { title, provider, date, link } = req.body;
     const file = req.file;
 
-    if (!name || !file) {
-        return res.status(400).json({ error: 'Name and image are required' });
+    if (!title || !file) {
+        return res.status(400).json({ error: 'Title and image are required' });
     }
 
     try {
@@ -53,8 +53,8 @@ app.post('/certificate', upload.single('image'), async (req, res) => {
 
         // Insert metadata into the PostgreSQL database
         const result = await pool.query(
-            'INSERT INTO certificates (name, description, image, category, link) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [name, description, publicURL, category, link]
+            'INSERT INTO certificates (title, provider, date, link, image) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [title, provider, date, link, publicURL]
         );
 
         res.status(200).json(result.rows[0]);
@@ -62,6 +62,7 @@ app.post('/certificate', upload.single('image'), async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // Route to get all certificates
 app.get('/certificates', async (req, res) => {
@@ -93,7 +94,7 @@ app.get('/certificate/:id', async (req, res) => {
 // Route to update a certificate by ID
 app.put('/certificate/:id', upload.single('image'), async (req, res) => {
     const id = req.params.id;
-    const { name, description, category, link } = req.body;
+    const { title, provider, date, link } = req.body;
     const file = req.file;
 
     try {
@@ -115,10 +116,14 @@ app.put('/certificate/:id', upload.single('image'), async (req, res) => {
         }
 
         // Update metadata in the PostgreSQL database
-        const result = await pool.query(
-            'UPDATE certificates SET name = $1, description = $2, image = COALESCE($3, image), category = $4, link = $5 WHERE id = $6 RETURNING *',
-            [name, description, publicURL, category, link, id]
-        );
+        const query = `
+            UPDATE certificates 
+            SET title = $1, provider = $2, date = $3, link = $4, image = COALESCE($5, image) 
+            WHERE id = $6 
+            RETURNING *`;
+        const values = [title, provider, date, link, publicURL, id];
+
+        const result = await pool.query(query, values);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Certificate not found' });
